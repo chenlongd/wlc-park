@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.perenc.xh.lsp.dao.wxCustomer.WxCustomerDao"> <!-- 指定DAO -->
+
+	<!-- ******** 增删改查 start ******** -->
+	<select id="list" resultType="com.perenc.xh.lsp.entity.wxCustomer.WmCustomer"> <!-- 通用分页查询 -->
+		select t.*
+		from `wm_customer` t
+		where 1=1
+		<include refid="common.where"></include>
+		<if test="order != null">
+			order by ${order}
+		</if>
+		<if test="!queryall">
+			limit #{begin},#{pageSize}
+		</if>
+	</select>
+
+	<select id="count" resultType="int"> <!-- 查询数量 -->
+		select count(*)
+		from `wm_customer` t
+		where 1=1
+		<include refid="common.where"></include>
+	</select>
+
+	<select id="getById" resultType="com.perenc.xh.lsp.entity.wxCustomer.WmCustomer"> <!-- 通过id查询 -->
+		select t.*
+		from `wm_customer` t
+		where t.id = #{0}
+	</select>
+
+	<select id="getOne" resultType="com.perenc.xh.lsp.entity.wxCustomer.WmCustomer"> <!-- 查询单条记录 -->
+		select t.*
+		from `wm_customer` t
+		where 1=1
+		<include refid="common.where"></include>
+		<if test="order != null">
+			order by ${order}
+		</if>
+		limit 0,1
+	</select>
+
+	<delete id="delete"> <!-- 删除 -->
+		delete from `wm_customer`
+		where id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+	<insert id="add" useGeneratedKeys="true" keyProperty="id"> <!-- 新增 -->
+		insert into `wm_customer` <include refid="common.insert"></include>
+	</insert>
+
+	<update id="update"> <!-- 修改 -->
+		update `wm_customer` set <include refid="common.update"></include>
+	</update>
+	<!-- ******** 增删改查 end ******** -->
+
+
+	<!-- 查询根据文章id查询用户信息 -->
+	<select id="selectCustomerInfo" resultType="com.perenc.xh.lsp.entity.wxCustomer.WmCustomer" parameterType="java.util.Map">
+		select * from
+		<if test="num>=1">
+		wm_read a left JOIn wm_read b
+		on a.`customer_id` = b.`customer_id`
+		</if>
+		where a.`article_id` = 54
+		and b.`article_id` = 70
+		group by a.`customer_id`;
+		SELECT
+		count(*) FROM  wm_user_company_contents uc
+		JOIN wm_contents c ON uc.contents_id=c.id
+		<if test="ids!=null">
+			JOIN wm_contents_lable cl ON uc.id=cl.ucc_id
+			JOIN wm_lable l ON cl.lable_id=l.id
+		</if>
+		where uc.user_id = #{uid}
+		AND uc.company_id=#{companyId}
+		AND uc.status=#{status}
+		<if test="isPublish!=null">
+			AND uc.conditions=#{isPublish}
+		</if>
+		<if test="ids!=null">
+			AND l.id IN
+			<foreach collection="ids" item="item" index="index" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		AND c.title LIKE '%${title}%'
+	</select>
+
+	<select id="selectHierarchyWmCustomerInfo" resultType="com.perenc.xh.lsp.entity.wxCustomer.WmCustomer" parameterType="java.util.Map">
+		select c.* from wm_customer_article_level ca
+		join wm_customer c
+		on ca.`customer_id`=c.`id`
+		where ca.`article_id`=#{articleId}
+		<if test="nickName==null||nickName==''">
+			AND ca.`level`=#{level}
+		</if>
+		<if test="customerId!=0">
+			AND ca.`fid`=#{customerId}
+		</if>
+		AND c.`nick_name` LIKE '%${nickName}%'
+
+	</select>
+
+</mapper>

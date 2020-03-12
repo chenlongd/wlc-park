@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:component-scan base-package="com.perenc.xh.lsp.*"/>
+
+    <!-- 创建名为springSessionRepositoryFilter 的Spring Bean，继承自Filter。 springSessionRepositoryFilter替换容器默认的HttpSession支持为Spring
+        Session， 将Session实例存放在Redis中 -->
+    <bean class="org.springframework.session.data.redis.config.annotation.web.http.RedisHttpSessionConfiguration">
+        <!-- session过期时间,单位是秒 -->
+        <property name="maxInactiveIntervalInSeconds" value="900"></property>
+    </bean>
+
+
+</beans>

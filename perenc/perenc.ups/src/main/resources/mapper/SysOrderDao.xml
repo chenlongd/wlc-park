@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.perenc.xh.lsp.dao.order.SysOrderDao"> <!-- 指定DAO -->
+
+	<!-- ******** 增删改查 start ******** -->
+	<!-- 通用分页查询 -->
+	<select id="list" resultType="com.perenc.xh.lsp.entity.order.SysOrder">
+		select t.*
+		from `sys_order` t
+		where 1=1
+		<include refid="common.where"></include>
+		<if test="order != null">
+			order by ${order}
+		</if>
+		<if test="!queryall">
+			limit #{begin},#{pageSize}
+		</if>
+	</select>
+
+	<!-- 查询数量 -->
+	<select id="count" resultType="int">
+		select count(*)
+		from `sys_order` t
+		where 1=1
+		<include refid="common.where"></include>
+	</select>
+
+	<!-- 通过id查询 -->
+	<select id="getById" resultType="com.perenc.xh.lsp.entity.order.SysOrder">
+		select t.*
+		from `sys_order` t
+		where t.id = #{0}
+	</select>
+
+	<!-- 通过用户查询分组 -->
+	<select id="getStoreList" resultType="java.lang.String">
+		SELECT
+			store_id
+		FROM
+			sys_order
+		WHERE
+			customer_id = #{customerId}
+			AND
+      		confirm_type = 1
+		GROUP BY
+			store_id
+		ORDER BY
+			create_time
+		DESC
+	</select>
+
+	<!-- 通过订单号分组 -->
+	<select id="getOrderNoList" resultType="java.lang.String">
+		SELECT
+			order_no
+		FROM
+			sys_order
+		WHERE
+			store_id = #{storeId}
+			AND
+      		confirm_type = 1
+			<if test="customerId != null">
+				AND
+				customer_id = #{customerId}
+			</if>
+		GROUP BY
+			order_no
+		ORDER BY
+			create_time
+		DESC
+	</select>
+
+	<!-- 查询单条记录 -->
+	<select id="getOne" resultType="com.perenc.xh.lsp.entity.order.SysOrder">
+		select t.*
+		from `sys_order` t
+		where 1=1
+		<include refid="common.where"></include>
+		<if test="order != null">
+			order by ${order}
+		</if>
+		limit 0,1
+	</select>
+
+	<!-- 删除 -->
+	<delete id="delete">
+		delete from `sys_order`
+		where id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+	<!-- 新增 -->
+	<insert id="add" useGeneratedKeys="true" keyProperty="id">
+		insert into `sys_order` <include refid="common.insert"></include>
+	</insert>
+
+	<!-- 修改 -->
+	<update id="update">
+		update `sys_order` set <include refid="common.update"></include>
+	</update>
+
+	<!--商户端统计订单数据-->
+	<select id="countOrderData" resultType="java.lang.String" parameterType="java.util.Map">
+		SELECT
+			order_no
+		FROM
+			`sys_order` t
+		WHERE
+			1 = 1
+		AND t.pay_type = #{payType}
+		AND t.pay_status = #{payStatus}
+		AND t.confirm_type = #{confirmType}
+		AND t.order_status = #{orderStatus}
+		AND t.store_id = #{storeId}
+		GROUP BY
+			order_no;
+	</select>
+
+	<!--客户端统计订单数据-->
+	<select id="countOrderDataInfo" resultType="java.lang.String" parameterType="java.util.Map">
+		SELECT
+			order_no
+		FROM
+			`sys_order` t
+		WHERE
+			1 = 1
+		AND t.pay_type = #{payType}
+		AND t.pay_status = #{payStatus}
+		AND t.confirm_type = #{confirmType}
+		AND t.order_status = #{orderStatus}
+		AND customer_id = #{customerId}
+		GROUP BY
+			order_no;
+	</select>
+
+	<!-- 停车费用总统计：总支付笔数，总收益 ，查询条件，微信支付  -->
+	<select id="findTcOrderTotalData"  resultType="java.util.Map">
+		SELECT sum(if((syo.id>0),1,0)) as countPay,
+		sum(if((syo.actual>0),syo.actual,0)) as totalMoney
+		from sys_order syo
+		where  syo.pay_type in (1,2,5) and syo.order_status=2
+		and syo.pay_mode=1 and syo.pay_time >='2019-09-01 00:00:00'
+	</select>
+
+	<!-- 停车费用统计  -->
+	<select id="findTcOrderStatistics"  resultType="java.util.Map">
+		SELECT sum(if((syo.actual>0),1,0)) as countPay,
+		sum(if((syo.actual=0),1,0)) as countFree,
+		sum(if((syo.pay_type=2),1,0)) as countRecharge,
+		sum(if((syo.pay_type=2),syo.actual,0)) as rechargeMoney,
+		sum(if((syo.balance>0),1,0)) as countUseRecharge,
+		sum(if((syo.balance>0),syo.balance,0)) as useRecharge,
+		sum(if((syo.pay_mode=1),1,0)) as countUseWechat,
+		sum(if((syo.pay_mode=1),syo.actual,0)) as payWechatMoney,
+		sum(syo.actual+syo.free) as shouldPayMoney,
+		sum(if((syo.actual>0),syo.actual,0)) as payMoney,
+		sum(if((syo.free>0),syo.free,0)) as freeMoney,
+		sum(if((syo.coupon_duration>0),syo.coupon_duration,0)) as couponHour,
+		sum(if((syo.coupon_amount>0),1,0)) as countUseCoupon,
+		sum(if((syo.coupon_amount>0),syo.coupon_amount,0)) as couponMoney,
+		sum(if((syo.pay_type=5 &amp;&amp; syo.vip_type=1),1,0)) as countBuyMVip,
+		sum(if((syo.pay_type=5 &amp;&amp; syo.vip_type=2),1,0)) as countBuyQVip,
+		sum(if((syo.pay_type=5 &amp;&amp; syo.vip_type=3),1,0)) as countBuyHVip,
+		sum(if((syo.pay_type=5 &amp;&amp; syo.vip_type=4),1,0)) as countBuyYVip
+		from sys_order syo
+		where  syo.pay_type in (1,2,5) and syo.order_status=2
+		<if test="startTime != null and '' != startTime">
+			and syo.pay_time >=#{startTime}
+		</if>
+		<if test="endTime != null and '' != endTime">
+			and syo.pay_time &lt;=#{endTime}
+		</if>
+	</select>
+
+
+	<!-- 商家免费车费用统计  -->
+	<select id="findTcOrderStatBySellerId"  resultType="java.util.Map">
+		SELECT sum(if((syo.id>0),1,0)) as cnumber,
+		sum(if((syo.park_duration>0),syo.park_duration,0)) as parkDuration,
+		sum(if((syo.free>0),syo.free,0)) as parkAmount
+		from sys_order syo
+		where  syo.pay_type=1 and syo.order_status=2 and syo.pay_mode=6 and syo.free>0
+		<if test="sellerId != null and '' != sellerId">
+			and syo.seller_id =#{sellerId}
+		</if>
+	</select>
+
+	<!-- 删除停车场临时定单 -->
+	<delete id="deleteTcTempOrderByEdate">
+		delete from `sys_order`
+		where pay_type in (1,2,5) and order_status=1
+		<if test="ndate != null and '' != ndate">
+		and create_time &lt;=#{ndate}
+		</if>
+	</delete>
+
+</mapper>

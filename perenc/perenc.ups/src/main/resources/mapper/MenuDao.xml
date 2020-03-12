@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.perenc.xh.lsp.dao.menu.MenuDao">
+
+	<!-- ******** 增删改查 start ******** -->
+	<select id="list" resultType="com.perenc.xh.lsp.entity.menu.Menu"> <!-- 通用分页查询 -->
+		select t.*
+		from `wm_menu` t
+		where 1=1
+		<include refid="common.where"></include>
+		<if test="order != null">
+			order by ${order}
+		</if>
+		<if test="!queryall">
+			limit #{begin},#{pageSize}
+		</if>
+	</select>
+
+	<select id="count" resultType="int"> <!-- 查询数量 -->
+		select count(*)
+		from `wm_menu` t
+		where 1=1
+		<include refid="common.where"></include>
+	</select>
+
+	<select id="getById" resultType="com.perenc.xh.lsp.entity.menu.Menu"> <!-- 通过id查询 -->
+		select t.*
+		from `wm_menu` t
+		where t.id = #{0}
+	</select>
+
+	<select id="getOne" resultType="com.perenc.xh.lsp.entity.menu.Menu"> <!-- 查询单条记录 -->
+		select t.*
+		from `wm_menu` t
+		where 1=1
+		<include refid="common.where"></include>
+		<if test="order != null">
+			order by ${order}
+		</if>
+		limit 0,1
+	</select>
+
+	<delete id="delete"> <!-- 删除 -->
+		delete from `wm_menu`
+		where id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+	<insert id="add" useGeneratedKeys="true" keyProperty="id"> <!-- 新增 -->
+		insert into `wm_menu` <include refid="common.insert"></include>
+	</insert>
+
+	<update id="update"> <!-- 修改 -->
+		update `wm_menu` set <include refid="common.update"></include>
+	</update>
+
+	<!--********* 查询用户菜单 *********-->
+	<select id="queryTreeChlid" resultType="com.perenc.xh.lsp.entity.menu.Menu" parameterType="java.util.Map">
+		SELECT DISTINCT m.* FROM wm_user u
+		LEFT JOIN  wm_user_role ur ON u.`id`=ur.`user_id`
+		LEFT JOIN wm_role r ON ur.`role_id`=r.`id`
+		LEFT JOIN wm_role_menu rm ON r.`id`=rm.`role_id`
+		LEFT JOIN wm_menu m ON rm.`menu_id`=m.`id`
+		WHERE u.`id`=#{userId}
+		AND m.super_id=#{superId}
+		order by m.menu_sort ASC
+	</select>
+
+	<!-- 查询管理员是否有增、删、改权限 -->
+	<select id="getUserMenu" resultType="java.lang.String" parameterType="java.util.Map">
+		SELECT
+		m.menu_url
+		FROM
+			wm_menu m
+		WHERE
+			m.menu_type = '1'
+		AND m.id IN (
+			SELECT
+				rm.menu_id
+			FROM
+				wm_role_menu rm
+			WHERE
+				rm.role_id IN (
+					SELECT
+						mr.role_id
+					FROM
+						wm_user_role mr
+					WHERE
+						mr.user_id = #{userId}))
+	</select>
+
+	<!-- 通过管理员编号查询左边树父菜单 -->
+	<select id="queryMenuTreeByUserId" parameterType="java.lang.Integer" resultType="com.perenc.xh.lsp.entity.menu.Menu">
+		SELECT * FROM wm_menu m1 WHERE m1.id IN( select DISTINCT
+		m.id from wm_menu m where m.id in
+		(select rm.menu_id from
+		wm_role_menu rm where rm.role_id in
+		(select mr.role_id from wm_user_role
+		mr where mr.user_id=#{userId}))
+		) AND
+		m1.super_id = 0
+		ORDER BY m1.menu_sort ASC
+	</select>
+
+	<!-- 通过管理员编号查询左边树子菜单 -->
+	<select id="queryMenuTreeChildByUserId" parameterType="java.util.Map" resultType="com.perenc.xh.lsp.entity.menu.Menu">
+		select * from wm_menu m where m.super_id=#{superId} and
+		m.id in
+		(select rm.menu_id from wm_role_menu rm where rm.role_id in
+		(select mr.role_id from wm_user_role mr where
+		mr.user_id=#{userId}))
+		and m.menu_type!= 1
+		ORDER BY m.menu_sort ASC
+	</select>
+
+	<!-- 通过菜单路径查询按钮 -->
+	<select id="queryMenuByMenuUrl" resultType="com.perenc.xh.lsp.entity.menu.Menu">
+	 SELECT *  from wm_menu wmu
+	 where 1=1
+	 <if test="userId != null and '' != userId">
+		 and wmu.id in (
+		 SELECT DISTINCT wrm.menu_id from wm_role_menu wrm where wrm.role_id in (
+		 SELECT wmr.id from wm_role wmr where wmr.id in (
+		 SELECT role_id from wm_user_role wur where wur.user_id=#{userId})))
+	 </if>
+	 <if test="menuUrl != null and '' != menuUrl">
+	 and wmu.super_id in (SELECT id from wm_menu wm1 where wm1.menu_url=#{menuUrl})
+	 </if>
+	 <if test="menuType != null and '' != menuType">
+     and wmu.menu_type=#{menuType}
+	 </if>
+	 ORDER BY wmu.menu_sort ASC
+	</select>
+
+
+
+</mapper> 

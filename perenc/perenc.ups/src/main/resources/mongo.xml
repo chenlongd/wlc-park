@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans.xsd 
+	http://www.springframework.org/schema/data/mongo 
+	http://www.springframework.org/schema/data/mongo/spring-mongo.xsd 
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context.xsd">
+
+
+	<!--<mongo:mongo id="mongo" host="${mongo.ip}" port="${mongo.host}"> <mongo:options 
+		connections-per-host="${mongo.connectionsPerHos}" threads-allowed-to-block-for-connection-multiplier="${mongo.threadsAllowedToBlockForConnectionMultiplier}" 
+		connect-timeout="${mongo.connectTimeout}" max-wait-time="${mongo.maxWaitTime}" 
+		auto-connect-retry="${mongo.autoConnectRetry}" socket-keep-alive="${mongo.socketKeepAlive}" 
+		socket-timeout="${mongo.socketTimeout}" slave-ok="true" write-number="1" 
+		write-timeout="0" write-fsync="true" /> </mongo:mongo> -->
+
+
+	<mongo:mongo id="mongo" host="${mongo.ip}" port="${mongo.host}">
+		<mongo:options connections-per-host="8"
+					   threads-allowed-to-block-for-connection-multiplier="4"
+					   connect-timeout="1000" max-wait-time="1500" auto-connect-retry="true"
+					   socket-keep-alive="true" socket-timeout="1500" slave-ok="true"
+					   write-number="1" write-timeout="0" write-fsync="true" />
+	</mongo:mongo>
+
+	<!-- mongo的工厂，通过它来取得mongo实例,dbname为mongodb的数据库名，没有的话会自动创建  username为mongodb用户名 password为mongodb的密码-->
+	<mongo:db-factory id="mongoDbFactory" dbname="${mongo.defaultDbName}" username="${mongo.user}" password="${mongo.pwd}"
+		mongo-ref="mongo" />
+
+	<!--<mongo:db-factory id="mongoDbFactory" dbname="${mongo.defaultDbName}" mongo-ref="mongo" />-->
+
+	<!-- mongodb的主要操作对象，所有对mongodb的增删改查的操作都是通过它完成 -->
+	<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+		<constructor-arg ref="mongoDbFactory" />
+	</bean>
+
+	<!-- 映射转换器，扫描back-package目录下的文件，根据注释，把它们作为mongodb的一个collection的映射 User -->
+	<mongo:mapping-converter base-package="com.perenc.xh.lsp.entity" />
+
+	<!-- 属性注入 -->
+    <bean id="mongoDAOImpl" class="com.perenc.xh.commonUtils.dao.impl.MongoComDAOImpl">
+    	<property name="mongoTemplate" ref="mongoTemplate"></property>
+    </bean>
+
+	<!-- To translate any MongoExceptions thrown in @Repository annotated classes -->
+	<context:annotation-config />
+</beans>
