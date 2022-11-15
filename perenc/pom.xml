@@ -19,7 +19,7 @@
         <log4j.version>1.2.17</log4j.version>
         <org.springframework.version>4.3.14.RELEASE</org.springframework.version>
         <spring-data-mongo-version>1.10.15.RELEASE</spring-data-mongo-version>
-        <jackson.version>2.10.1</jackson.version>
+        <jackson.version>2.12.7.1</jackson.version>
         <dubbo_version>2.5.3</dubbo_version>
     </properties>
 
