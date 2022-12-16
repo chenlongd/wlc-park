@@ -17,7 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <log4j.version>1.2.17</log4j.version>
-        <org.springframework.version>4.3.14.RELEASE</org.springframework.version>
+        <org.springframework.version>5.2.20.RELEASE</org.springframework.version>
         <spring-data-mongo-version>1.10.15.RELEASE</spring-data-mongo-version>
         <jackson.version>2.10.1</jackson.version>
         <dubbo_version>2.5.3</dubbo_version>
